@@ -1,0 +1,12 @@
+{
+  "records": [
+    { "employeeId": "E1001", "type": "CREATE", "version": 1, "name": "Asha Rao",
+      "email": "asha@acme.com", "phone": "+91 98450 12345", "officeCode": "BLR01", "shiftCode": "DAY" },
+    { "employeeId": "E1002", "type": "CREATE", "version": 1, "name": "Ravi Kumar",
+      "email": "ravi@acme.com", "officeCode": "HYD01", "shiftCode": "NIGHT" },
+    { "employeeId": "E1003", "type": "CREATE", "version": 1, "name": "Bad Data",
+      "email": "not-an-email", "phone": "123", "officeCode": "PUNE99" },
+    { "employeeId": "E1001", "type": "CREATE", "version": 1, "name": "Asha Rao",
+      "email": "asha@acme.com", "phone": "+91 98450 12345", "officeCode": "BLR01", "shiftCode": "DAY" }
+  ]
+}
