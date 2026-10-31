@@ -27,7 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-@SpringBootTest
+@SpringBootTest(properties = "roster.outbox.relay.enabled=false")
 @Import(TestcontainersConfiguration.class)
 class IngestIntegrationTest {
 

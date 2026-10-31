@@ -5,11 +5,10 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5433/rostersync}
     username: ${DB_USER:rostersync}
     password: ${DB_PASSWORD:rostersync}
+    hikari:
+      maximum-pool-size: 10
   flyway:
     locations: classpath:db/migration
-
-server:
-  port: 8080
 
 management:
   endpoints:
@@ -19,3 +18,11 @@ management:
   endpoint:
     health:
       show-details: always
+
+roster:
+  outbox:
+    relay:
+      enabled: true
+    poll-interval-ms: 1000
+    batch-size: 100
+    max-attempts: 5
