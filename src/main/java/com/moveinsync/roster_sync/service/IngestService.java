@@ -93,4 +93,8 @@ public class IngestService {
         }
         return result.outcome();
     }
+        /** Applies one already-validated event in its own transaction. Used by reconciliation. */
+    public ApplyOutcome applyValidated(EmployeeEvent event) {
+        return tx.execute(status -> applyInTransaction(event));
+    }
 }

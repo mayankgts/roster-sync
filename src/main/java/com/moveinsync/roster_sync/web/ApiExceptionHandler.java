@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.moveinsync.roster_sync.reconciliation.InvalidFileException;
+import com.moveinsync.roster_sync.service.InvalidStateException;
 import com.moveinsync.roster_sync.service.NotFoundException;
 
 /**
@@ -33,5 +35,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         @ExceptionHandler(NotFoundException.class)
     public ProblemDetail notFound(NotFoundException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+        @ExceptionHandler(InvalidStateException.class)
+    public ProblemDetail conflict(InvalidStateException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidFileException.class)
+    public ProblemDetail invalidFile(InvalidFileException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 }

@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
   application:
     name: roster-sync
   datasource:
@@ -20,9 +24,13 @@ management:
       show-details: always
 
 roster:
+  reconciliation:
+    brake-threshold: 0.30
+    storage-dir: ${java.io.tmpdir}/roster-reconciliation
   outbox:
     relay:
       enabled: true
     poll-interval-ms: 1000
     batch-size: 100
     max-attempts: 5
+
