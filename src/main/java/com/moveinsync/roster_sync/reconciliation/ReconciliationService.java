@@ -16,10 +16,12 @@ import com.moveinsync.roster_sync.service.InvalidStateException;
 import com.moveinsync.roster_sync.service.NotFoundException;
 import com.moveinsync.roster_sync.service.OutboxPayload;
 import com.moveinsync.roster_sync.service.RecordResult;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,12 +51,13 @@ public class ReconciliationService {
     private final ReconciliationRepository runs;
     private final IngestService ingestService;
     private final TransactionTemplate tx;
+    private final MeterRegistry registry;
     private final double brakeThreshold;
     private final Path storageDir;
 
     public ReconciliationService(RecordValidator validator, OfficeRepository offices, EmployeeRepository employees,
                                  OutboxRepository outbox, ReconciliationRepository runs, IngestService ingestService,
-                                 PlatformTransactionManager txManager,
+                                 PlatformTransactionManager txManager, MeterRegistry registry,
                                  @Value("${roster.reconciliation.brake-threshold:0.30}") double brakeThreshold,
                                  @Value("${roster.reconciliation.storage-dir:${java.io.tmpdir}/roster-reconciliation}")
                                  String storageDir) {
@@ -65,6 +68,7 @@ public class ReconciliationService {
         this.runs = runs;
         this.ingestService = ingestService;
         this.tx = new TransactionTemplate(txManager);
+        this.registry = registry;
         this.brakeThreshold = brakeThreshold;
         this.storageDir = Path.of(storageDir);
     }
@@ -221,6 +225,7 @@ public class ReconciliationService {
             return finish(tenantId, runId, "COMPLETED", t, ratio, startedAt, problems);
         } catch (IOException | RuntimeException e) {
             runs.finish(runId, "FAILED", t.toSummary(0, brakeThreshold, elapsedMs(startedAt)));
+            registry.counter("roster.reconciliation.runs", "tenant", tenantId, "status", "FAILED").increment();
             throw e;
         }
     }
@@ -242,7 +247,16 @@ public class ReconciliationService {
 
     private ReconciliationReport finish(String tenantId, long runId, String status, Tally t, double ratio,
                                         long startedAt, List<RecordResult> problems) {
-        runs.finish(runId, status, t.toSummary(ratio, brakeThreshold, elapsedMs(startedAt)));
+        long durationMs = elapsedMs(startedAt);
+        runs.finish(runId, status, t.toSummary(ratio, brakeThreshold, durationMs));
+
+        registry.counter("roster.reconciliation.runs", "tenant", tenantId, "status", status).increment();
+        if ("BLOCKED".equals(status)) {
+            registry.counter("roster.reconciliation.brake.triggered", "tenant", tenantId).increment();
+        }
+        registry.counter("roster.reconciliation.deactivated", "tenant", tenantId).increment(t.deactivated);
+        registry.timer("roster.reconciliation.duration", "tenant", tenantId).record(Duration.ofMillis(durationMs));
+
         log.info("Reconciliation tenant={} runId={} status={} rows={} dirtyBuckets={} changed={} missing={}",
                 tenantId, runId, status, t.fileRows, t.dirtyBuckets, t.changed, t.missing);
         return new ReconciliationReport(find(tenantId, runId), problems);

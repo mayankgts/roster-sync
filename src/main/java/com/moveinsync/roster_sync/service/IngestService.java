@@ -11,6 +11,8 @@ import com.moveinsync.roster_sync.domain.ValidationResult;
 import com.moveinsync.roster_sync.persistence.EmployeeRepository;
 import com.moveinsync.roster_sync.persistence.OfficeRepository;
 import com.moveinsync.roster_sync.persistence.OutboxRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -31,27 +33,47 @@ public class IngestService {
     private final EmployeeRepository employees;
     private final OutboxRepository outbox;
     private final TransactionTemplate tx;
+    private final MeterRegistry registry;
 
     public IngestService(RecordValidator validator, EventApplier applier, OfficeRepository offices,
                          EmployeeRepository employees, OutboxRepository outbox,
-                         PlatformTransactionManager txManager) {
+                         PlatformTransactionManager txManager, MeterRegistry registry) {
         this.validator = validator;
         this.applier = applier;
         this.offices = offices;
         this.employees = employees;
         this.outbox = outbox;
         this.tx = new TransactionTemplate(txManager);
+        this.registry = registry;
     }
 
     public BatchResult ingest(String tenantId, List<IncomingRecord> records) {
+        Timer.Sample timer = Timer.start(registry);
         Set<String> officeCodes = offices.findCodes(tenantId);
         List<RecordResult> results = new ArrayList<>(records.size());
         for (int i = 0; i < records.size(); i++) {
             results.add(ingestOne(tenantId, i, records.get(i), officeCodes));
         }
         BatchResult batch = BatchResult.of(results);
+
+        batch.counts().forEach((outcome, count) -> {
+            if (count > 0) {
+                registry.counter("roster.ingest.records", "tenant", tenantId, "outcome", outcome.name())
+                        .increment(count);
+            }
+        });
+        timer.stop(Timer.builder("roster.ingest.batch")
+                .tag("tenant", tenantId)
+                .publishPercentileHistogram()
+                .register(registry));
+
         log.info("Batch tenant={} total={} counts={}", tenantId, batch.total(), batch.counts());
         return batch;
+    }
+
+    /** Applies one already-validated event in its own transaction. Used by reconciliation. */
+    public ApplyOutcome applyValidated(EmployeeEvent event) {
+        return tx.execute(status -> applyInTransaction(event));
     }
 
     private RecordResult ingestOne(String tenantId, int index, IncomingRecord record, Set<String> officeCodes) {
@@ -92,9 +114,5 @@ public class IngestService {
                     ChangeType.of(current, after).name(), after.hrVersion(), payload);
         }
         return result.outcome();
-    }
-        /** Applies one already-validated event in its own transaction. Used by reconciliation. */
-    public ApplyOutcome applyValidated(EmployeeEvent event) {
-        return tx.execute(status -> applyInTransaction(event));
     }
 }

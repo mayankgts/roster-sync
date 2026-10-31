@@ -5,6 +5,7 @@ import com.moveinsync.roster_sync.outbox.OutboxEvent;
 import com.moveinsync.roster_sync.outbox.OutboxEventHandler;
 import com.moveinsync.roster_sync.persistence.EmployeeRepository;
 import com.moveinsync.roster_sync.service.ChangeType;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +23,13 @@ public class BookingCancellationHandler implements OutboxEventHandler {
 
     private final EmployeeRepository employees;
     private final BookingRepository bookings;
+    private final MeterRegistry registry;
 
-    public BookingCancellationHandler(EmployeeRepository employees, BookingRepository bookings) {
+    public BookingCancellationHandler(EmployeeRepository employees, BookingRepository bookings,
+                                      MeterRegistry registry) {
         this.employees = employees;
         this.bookings = bookings;
+        this.registry = registry;
     }
 
     @Override
@@ -47,6 +51,7 @@ public class BookingCancellationHandler implements OutboxEventHandler {
         }
 
         long cancelled = bookings.cancelFutureBookings(event.tenantId(), event.employeeId(), REASON);
+        registry.counter("roster.bookings.cancelled", "tenant", event.tenantId()).increment(cancelled);
         log.info("Cancelled bookings eventId={} tenant={} employeeId={} count={}",
                 event.id(), event.tenantId(), event.employeeId(), cancelled);
     }

@@ -83,4 +83,23 @@ public class OutboxRepository {
                 .param("id", id)
                 .update();
     }
+        public long countPending() {
+        return jdbc.sql("SELECT count(*) FROM outbox WHERE published_at IS NULL AND dead_lettered_at IS NULL")
+                .query(Long.class).single();
+    }
+
+    /** Age in seconds of the oldest event still waiting; 0 when the queue is empty. */
+    public double oldestPendingAgeSeconds() {
+        return jdbc.sql("""
+                SELECT COALESCE(EXTRACT(EPOCH FROM now() - min(created_at)), 0)
+                  FROM outbox
+                 WHERE published_at IS NULL AND dead_lettered_at IS NULL
+                """)
+                .query(Double.class).single();
+    }
+
+    public long countDeadLettered() {
+        return jdbc.sql("SELECT count(*) FROM outbox WHERE dead_lettered_at IS NOT NULL")
+                .query(Long.class).single();
+    }
 }
