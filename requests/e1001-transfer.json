@@ -1,0 +1,4 @@
+{ "records": [
+  { "employeeId": "E1001", "type": "UPDATE", "version": 2, "name": "Asha Rao",
+    "email": "asha@acme.com", "phone": "+91 98450 12345", "officeCode": "HYD01", "shiftCode": "DAY" }
+] }

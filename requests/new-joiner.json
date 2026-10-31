@@ -1,0 +1,4 @@
+{ "records": [
+  { "employeeId": "E1004", "type": "CREATE", "version": 1, "name": "Meera Iyer",
+    "email": "meera@acme.com", "officeCode": "HYD01", "shiftCode": "DAY" }
+] }
