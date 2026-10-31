@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: roster-postgres
+    environment:
+      POSTGRES_DB: roster
+      POSTGRES_USER: roster
+      POSTGRES_PASSWORD: roster
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roster -d roster"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: roster-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 5000
+      DB_URL: jdbc:postgresql://postgres:5432/roster
+      DB_USER: roster
+      DB_PASSWORD: roster
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-0123456789abcdef}
+      ROSTER_RECONCILIATION_STORAGE_DIR: /data/reconciliation
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+    ports:
+      - "8080:8080"
+    volumes:
+      - recon-files:/data/reconciliation
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: roster-prometheus
+    depends_on:
+      - app
+    volumes:
+      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./ops/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports:
+      - "9090:9090"
+
+volumes:
+  pgdata:
+  recon-files:
