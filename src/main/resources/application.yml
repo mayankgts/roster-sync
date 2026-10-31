@@ -24,6 +24,30 @@ management:
       show-details: always
 
 roster:
+  security:
+    jwt-secret: ${JWT_SECRET:dev-only-secret-change-me-0123456789abcdef}
+    token-ttl: 60m
+    users:
+      - username: hr-acme
+        password-hash: "$2b$10$N/ds51Mdiz8K3HfMTdvBmuNs7Qxox6yHwtBo99jIB9QBV6ydQCkmi"
+        role: INTEGRATION
+        tenant: acme
+      - username: admin-acme
+        password-hash: "$2b$10$rkNDn9JmLwIBI7AOOAhke.cyM4iPi8pK.mdHJGZLR8m9qjzyq4IEO"
+        role: ADMIN
+        tenant: acme
+      - username: ops-acme
+        password-hash: "$2b$10$RiJQKhZcLJtjG6BIZZg6C.8qsYu6hpyzj1PL2GlXh283w5lT1o5/e"
+        role: OPERATOR
+        tenant: acme
+      - username: E1001
+        password-hash: "$2b$10$0Ks1k7yz1GGdKbWp8fA44OZ3p12DbmUSVhbufWu84J3gtNk.lyqBK"
+        role: EMPLOYEE
+        tenant: acme
+      - username: hr-globex
+        password-hash: "$2b$10$215D0IPy.gpH6pAQuqULdu3NEdsT7ISxT7wKK3YTET3upiNMIjVkO"
+        role: INTEGRATION
+        tenant: globex
   reconciliation:
     brake-threshold: 0.30
     storage-dir: ${java.io.tmpdir}/roster-reconciliation
