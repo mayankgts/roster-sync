@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.moveinsync.roster_sync.service.NotFoundException;
+
 /**
  * Extending ResponseEntityExceptionHandler keeps Spring's correct status codes for
  * framework errors (malformed JSON -> 400, wrong method -> 405) with generic messages.
@@ -27,5 +29,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail unexpected(Exception e) {
         log.error("Unhandled error type={}", e.getClass().getName());
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
+    }
+        @ExceptionHandler(NotFoundException.class)
+    public ProblemDetail notFound(NotFoundException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
     }
 }

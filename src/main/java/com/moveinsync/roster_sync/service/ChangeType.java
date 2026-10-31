@@ -2,12 +2,13 @@ package com.moveinsync.roster_sync.service;
 
 import com.moveinsync.roster_sync.domain.Employee;
 
-/** The kind of event written to the outbox, derived from before/after state. */
+/** The kind of event written to the outbox. */
 public enum ChangeType {
     EMPLOYEE_CREATED,
     EMPLOYEE_UPDATED,
     EMPLOYEE_DEACTIVATED,
-    EMPLOYEE_REACTIVATED;
+    EMPLOYEE_REACTIVATED,
+    TRANSPORT_UPDATED;
 
     public static ChangeType of(Employee before, Employee after) {
         if (before == null) {

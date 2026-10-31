@@ -24,6 +24,23 @@ public class EmployeeRepository {
      * until the current transaction commits or rolls back. Works even if the
      * employee row does not exist yet.
      */
+
+    public void saveTransportState(String tenantId, String employeeId, TransportFields transport, long adminVersion) {
+        jdbc.sql("""
+                UPDATE employee
+                   SET pickup_point = :pickupPoint,
+                       special_assistance = :specialAssistance,
+                       admin_version = :adminVersion,
+                       updated_at = now()
+                 WHERE tenant_id = :tenantId AND employee_id = :employeeId
+                """)
+                .param("pickupPoint", transport.pickupPoint())
+                .param("specialAssistance", transport.specialAssistance())
+                .param("adminVersion", adminVersion)
+                .param("tenantId", tenantId)
+                .param("employeeId", employeeId)
+                .update();
+    }
     public void lock(String tenantId, String employeeId) {
         jdbc.sql("SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(:key, 0))")
                 .param("key", tenantId + ":" + employeeId)

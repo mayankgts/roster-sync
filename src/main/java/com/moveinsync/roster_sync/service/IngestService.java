@@ -1,7 +1,5 @@
 package com.moveinsync.roster_sync.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moveinsync.roster_sync.domain.ApplyOutcome;
 import com.moveinsync.roster_sync.domain.ApplyResult;
 import com.moveinsync.roster_sync.domain.Employee;
@@ -33,18 +31,16 @@ public class IngestService {
     private final EmployeeRepository employees;
     private final OutboxRepository outbox;
     private final TransactionTemplate tx;
-    private final ObjectMapper json;
 
     public IngestService(RecordValidator validator, EventApplier applier, OfficeRepository offices,
                          EmployeeRepository employees, OutboxRepository outbox,
-                         PlatformTransactionManager txManager, ObjectMapper json) {
+                         PlatformTransactionManager txManager) {
         this.validator = validator;
         this.applier = applier;
         this.offices = offices;
         this.employees = employees;
         this.outbox = outbox;
         this.tx = new TransactionTemplate(txManager);
-        this.json = json;
     }
 
     public BatchResult ingest(String tenantId, List<IncomingRecord> records) {
@@ -93,16 +89,8 @@ public class IngestService {
                     after.employeeId(), after.hrVersion(), after.status().name(),
                     after.hr().officeCode(), after.hr().shiftCode(), result.changedFields());
             outbox.append(after.tenantId(), after.employeeId(),
-                    ChangeType.of(current, after).name(), after.hrVersion(), toJson(payload));
+                    ChangeType.of(current, after).name(), after.hrVersion(), payload);
         }
         return result.outcome();
-    }
-
-    private String toJson(OutboxPayload payload) {
-        try {
-            return json.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Could not serialise outbox payload", e);
-        }
     }
 }
