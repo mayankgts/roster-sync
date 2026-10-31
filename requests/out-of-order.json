@@ -1,0 +1,8 @@
+{
+  "records": [
+    { "employeeId": "E1002", "type": "UPDATE", "version": 7, "name": "Ravi Kumar",
+      "email": "ravi@acme.com", "officeCode": "BLR01", "shiftCode": "NIGHT" },
+    { "employeeId": "E1002", "type": "UPDATE", "version": 6, "name": "Ravi Kumar",
+      "email": "ravi@acme.com", "officeCode": "HYD01", "shiftCode": "DAY" }
+  ]
+}
