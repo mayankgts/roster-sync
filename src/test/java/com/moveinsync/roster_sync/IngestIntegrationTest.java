@@ -38,7 +38,7 @@ class IngestIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
-        jdbc.sql("TRUNCATE employee, outbox RESTART IDENTITY").update();
+        jdbc.sql("TRUNCATE employee, outbox RESTART IDENTITY CASCADE").update();
     }
 
     @Test

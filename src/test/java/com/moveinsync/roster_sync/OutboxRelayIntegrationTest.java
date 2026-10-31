@@ -38,7 +38,7 @@ class OutboxRelayIntegrationTest {
 
     @BeforeEach
     void reset() {
-        jdbc.sql("TRUNCATE employee, outbox RESTART IDENTITY").update();
+        jdbc.sql("TRUNCATE employee, outbox RESTART IDENTITY CASCADE").update();
         handler.reset();
     }
 

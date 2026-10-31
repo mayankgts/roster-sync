@@ -38,7 +38,7 @@ class ReconciliationIntegrationTest {
 
     @BeforeEach
     void clean() {
-        jdbc.sql("TRUNCATE employee, outbox, reconciliation_run RESTART IDENTITY").update();
+        jdbc.sql("TRUNCATE employee, outbox, reconciliation_run RESTART IDENTITY CASCADE").update();
     }
 
     @Test

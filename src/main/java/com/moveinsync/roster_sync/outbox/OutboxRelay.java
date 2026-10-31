@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
@@ -19,6 +20,7 @@ public class OutboxRelay {
     private final OutboxRepository outbox;
     private final EventPublisher publisher;
     private final TransactionTemplate tx;
+    private final TransactionTemplate perEvent;
     private final int batchSize;
     private final int maxAttempts;
 
@@ -28,6 +30,10 @@ public class OutboxRelay {
         this.outbox = outbox;
         this.publisher = publisher;
         this.tx = new TransactionTemplate(txManager);
+        // Savepoint per event: a failing handler rolls back only its own work,
+        // and the outer batch transaction stays usable to record the failure.
+        this.perEvent = new TransactionTemplate(txManager);
+        this.perEvent.setPropagationBehavior(TransactionDefinition.PROPAGATION_NESTED);
         this.batchSize = batchSize;
         this.maxAttempts = maxAttempts;
     }
@@ -45,8 +51,10 @@ public class OutboxRelay {
                     continue;  // an earlier event for this employee failed: keep their order
                 }
                 try {
-                    publisher.publish(event);
-                    outbox.markPublished(event.id());
+                    perEvent.executeWithoutResult(s -> {
+                        publisher.publish(event);
+                        outbox.markPublished(event.id());
+                    });
                     count++;
                 } catch (RuntimeException e) {
                     outbox.recordFailure(event.id(), e.getClass().getSimpleName(), maxAttempts);
